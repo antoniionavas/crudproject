@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Admin\HomeController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,5 +20,6 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
-    Route::get('/', [HomeController::class, 'index']);
+    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::resource('usuarios', UserController::class)->names('usuarios')->parameters(['usuarios' => 'user']);
 });

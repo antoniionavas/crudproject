@@ -49,7 +49,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
-
+    
     /**
      * The accessors to append to the model's array form.
      *
@@ -58,4 +58,9 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    //metodo para tener cada usuario una img random
+    public function adminlte_image(){
+        return 'https://picsum.photos/300/300';
+    }
 }

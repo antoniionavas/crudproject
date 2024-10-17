@@ -134,9 +134,9 @@ return [
     */
 
     'usermenu_enabled' => true,
-    'usermenu_header' => false,
+    'usermenu_header' => true,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => false,
+    'usermenu_image' => true,
     'usermenu_desc' => false,
     'usermenu_profile_url' => false,
 
@@ -156,7 +156,7 @@ return [
     'layout_boxed' => null,
     'layout_fixed_sidebar' => null,
     'layout_fixed_navbar' => null,
-    'layout_fixed_footer' => null,
+    'layout_fixed_footer' => true,
     'layout_dark_mode' => null,
 
     /*
@@ -300,6 +300,15 @@ return [
 
     'menu' => [
 
+        // Menu items:
+
+        [
+            'text' => '',
+            'url'  => '/',
+            'icon' => 'fas fa-fw fa-home',
+            'topnav' => true,
+        ],
+
         // Sidebar items:
         [
             'type' => 'sidebar-menu-search',
@@ -307,7 +316,7 @@ return [
         ],
         [
             'text' => 'Inicio',
-            'url'  => 'admin/inicio',
+            'url'  => '/',
             'icon' => 'fas fa-fw fa-home', 
         ],
         [
@@ -317,7 +326,7 @@ return [
         ],
         [
             'text' => 'Usuarios',
-            'url'  => 'admin/usuarios',
+            'url'  => '/usuarios',
             'icon' => 'fas fa-fw fa-users', 
         ],
     ],

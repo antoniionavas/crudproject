@@ -43,15 +43,7 @@
 
     @stack('modals')
 
-    <footer class="main-footer">
-        <div class="float-right d-none d-sm-block">
-            <b>Versión</b> 3.0.0
-        </div>
-        <strong>Copyright &copy; 2024 <a href="#">Antonio Navas</a>.</strong> Todos los derechos reservados.
-    </footer>
-
     @livewireScripts
-    
 </body>
 
 </html>

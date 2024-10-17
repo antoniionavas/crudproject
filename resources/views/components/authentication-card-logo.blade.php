@@ -1,3 +1,3 @@
 <a href="/">
-    <img src="{{ asset('vendor/adminlte/dist/img/ProManageLogo.jpg') }}" alt="ProManage Logo" class="img-fluid rounded-circle" style="max-width: 150px; height: auto;">
+    <img src="{{ asset('vendor/adminlte/dist/img/ProManageLogo.jpg') }}" alt="ProManage Logo" style="max-width: 150px; height: auto; border-radius: 8.25rem;">
 </a>

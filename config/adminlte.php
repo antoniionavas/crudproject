@@ -321,7 +321,7 @@ return [
         ],
         [
             'text' => 'Control de Proyectos',
-            'url'  => 'admin/proyectos',
+            'url'  => '/proyectos',
             'icon' => 'fas fa-fw fa-project-diagram', 
         ],
         [

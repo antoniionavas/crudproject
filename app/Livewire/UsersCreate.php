@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
+use App\Models\User;
 use Livewire\Component;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 
 class UsersCreate extends Component
 {
@@ -36,9 +36,11 @@ class UsersCreate extends Component
         session()->flash('message', 'Usuario creado con éxito.');
         return redirect()->route('home');
     }
-
+    
     public function render()
     {
         return view('livewire.users-create');
     }
 }
+
+

@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TaskController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\UserController;
 
@@ -22,4 +24,6 @@ Route::middleware([
 ])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::resource('usuarios', UserController::class)->names('usuarios')->parameters(['usuarios' => 'user']);
+    Route::resource('proyectos', ProjectController::class)->names('proyectos')->parameters(['proyectos' => 'projects']);
+    Route::resource('tareas', TaskController::class)->names('tareas')->parameters(['tareas' => 'tasks']);
 });

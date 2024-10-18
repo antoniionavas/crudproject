@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 
 class UserController extends Controller
@@ -22,38 +23,58 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('admin.users.edit', compact('user'));
+        $data = [
+            'user' => $user,
+        ];
+        return view('admin.users.edit', $data);
     }
 
-        public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required',
-            'password' => 'required',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email|max:255',
+            'password' => 'required|string|min:8|confirmed',
         ]);
-
-        $user = User::create($request->all());
-        return redirect()->route('usuarios.edit', $user)->with('info', 'El usuario se creó con éxito');
+    
+        $is_admin = $request->has('is_admin') ? true : false;
+    
+        $user = User::create([
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => bcrypt($request->input('password')),
+            'is_admin' => $is_admin,
+        ]);
+    
+        return redirect()->route('usuarios.index')->with('message', 'El usuario se creó con éxito');
     }
+    
 
     public function update(Request $request, User $user)
     {
         $request->validate([
-            'name' => 'required',
-            'email' => 'required',
-            'password' => 'required',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'password' => 'nullable|string|min:8', 
         ]);
-
-        $user->update($request->all());
-
-        return redirect()->route('usuarios.edit', $user)->with('info', 'El usuario se actualizó con éxito');
+    
+        $is_admin = $request->has('is_admin') ? true : false;
+    
+        $user->update([
+            'name' => $request->input('name'),
+            'email' => $request->input('email'),
+            'password' => $request->filled('password') ? bcrypt($request->input('password')) : $user->password, 
+            'is_admin' => $is_admin,
+        ]);
+    
+        return redirect()->route('usuarios.index')->with('message', 'El usuario se actualizó con éxito');
     }
+    
 
     public function destroy(User $user)
     {
         $user->delete();
 
-        return redirect()->route('usuarios.index')->with('info', 'El usuario se eliminó con éxito');;
+        return redirect()->route('usuarios.index')->with('message', 'El usuario se eliminó con éxito');;
     }
 }

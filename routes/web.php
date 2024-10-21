@@ -27,8 +27,10 @@ Route::middleware([
 
     Route::get('/proyectos', [ProjectController::class, 'index'])->name('projects.index');
     Route::get('/proyectos/list', [ProjectController::class, 'getProjects'])->name('projects.list');
-    Route::get('/proyectos/create', [ProjectController::class, 'createProjects'])->name('projects.create');
+    Route::post('/proyectos/create', [ProjectController::class, 'createProjects'])->name('projects.create');
     Route::get('/tasks', [ProjectController::class, 'load'])->name('tasks.index');
-    Route::post('/tasks/crear', [ProjectController::class, 'storeTask'])->name('tasks.store');
+    Route::post('/tasks/create', [ProjectController::class, 'storeTask'])->name('tasks.store');
+    Route::get('/proyectos/generate-pdf', [ProjectController::class, 'generatePdf'])->name('projects.generatePdf');
+
 
 });

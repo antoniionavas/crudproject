@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\User;
 use App\Models\Project;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
     public function index()
     {
-        return view('admin.projects.index');
+        $projects = Project::all();
+        $users = User::all();
+        return view('admin.projects.index', compact('projects', 'users'));
     }
 
     public function getProjects()
@@ -34,15 +38,14 @@ class ProjectController extends Controller
 
     public function load()
     {
-    
-        $user = auth()->user();    
-        
-        if ($user->is_admin){
+        $user = auth()->user();
+
+        if ($user->is_admin) {
             $tasks = Task::all();
         } else {
             $tasks = Task::where('user_id', $user->id)->get();
         }
-        
+
         $events = [];
         foreach ($tasks as $task) {
             $events[] = [
@@ -67,5 +70,40 @@ class ProjectController extends Controller
         ]);
 
         return response()->json(['success' => true]);
+    }
+
+
+    public function generatePdf(Request $request)
+    {
+        $projectId = $request->input('project_id');
+        $userId = $request->input('user_id');
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        $tasksQuery = Task::with('project', 'user');
+
+        if ($projectId) {
+            $tasksQuery->where('project_id', $projectId);
+        }
+        if ($userId) {
+            $tasksQuery->where('user_id', $userId);
+        }
+        if ($startDate) {
+            $tasksQuery->where('start_time', '>=', $startDate);
+        }
+        if ($endDate) {
+            $tasksQuery->where('end_time', '<=', $endDate);
+        }
+
+        $tasks = $tasksQuery->get();
+        $tasksByProject = $tasks->groupBy('project_id');
+
+        // Obtén el nombre del proyecto y del usuario (si se seleccionó)
+        $projectName = $projectId ? Project::find($projectId)->name : 'Todos los proyectos';
+        $userName = $userId ? User::find($userId)->name : 'Todos los usuarios';
+
+        $pdf = PDF::loadView('admin.projects.report', compact('tasksByProject', 'startDate', 'endDate', 'projectName', 'userName'));
+
+        return $pdf->download('informe-tareas.pdf');
     }
 }

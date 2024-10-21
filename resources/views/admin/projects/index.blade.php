@@ -20,8 +20,9 @@
                     @if (auth()->user()->is_admin)
                         <div class="d-flex justify-content-end space-around">
                             <button class="btn btn-primary" data-toggle="modal" data-target="#addProjectModal">+</button>
-                            <button class="btn btn-danger ml-2" data-toggle="modal" data-target="#addProjectModal"> <i
-                                    class="fas fa-file-pdf"></i></button>
+                            <button class="btn btn-danger ml-2" data-toggle="modal" data-target="#pdfReportModal">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
                         </div>
                     @endif
 
@@ -30,10 +31,6 @@
                             <th>Nombre</th>
                             <th>Creado por</th>
                             <th>Fecha</th>
-                            @if (auth()->user()->is_admin)
-                                <th></th>
-                                <th></th>
-                            @endif
                         </tr>
                     </thead>
                     <tbody id="projects-list">
@@ -89,23 +86,76 @@
                     </div>
                     <div class="modal-body">
                         <form id="taskForm">
-                            <input type="hidden" id="taskProjectId">
-                            <div class="form-group">
-                                <label for="taskDescription">Descripción</label>
-                                <input type="text" class="form-control" id="taskDescription" name="description" required>
-                            </div>
                             <div class="form-group">
                                 <label for="taskStartTime">Hora de Inicio</label>
                                 <input type="datetime-local" class="form-control" id="taskStartTime" name="start_time"
                                     required>
                             </div>
+
+                            <input type="hidden" id="taskProjectId">
+                            <div class="form-group">
+                                <label for="taskDescription">Descripción</label>
+                                <input type="text" class="form-control" id="taskDescription" name="description" required>
+                            </div>
+
                             <div class="form-group">
                                 <label for="taskEndTime">Hora de Fin</label>
                                 <input type="datetime-local" class="form-control" id="taskEndTime" name="end_time" required>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                                <button type="submit" class="btn btn-primary">Guardar Tarea</button>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-success">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="pdfReportModal" tabindex="-1" role="dialog" aria-labelledby="pdfReportModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="pdfReportModalLabel">Opciones del informe</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="{{ route('projects.generatePdf') }}" method="GET" target="_blank">
+                            @csrf
+                            <div class="form-row"> 
+                                <div class="form-group col-md-6"> 
+                                    <label for="start_date">Fecha Desde:</label>
+                                    <input type="date" name="start_date" id="start_date" class="form-control">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="end_date">Fecha Hasta:</label>
+                                    <input type="date" name="end_date" id="end_date" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="project_id">Proyecto:</label>
+                                <select name="project_id" id="project_id" class="form-control">
+                                    <option value="">Todos los proyectos</option>
+                                    @foreach ($projects as $project)
+                                        <option value="{{ $project->id }}">{{ $project->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="user_id">Usuario:</label>
+                                <select name="user_id" id="user_id" class="form-control">
+                                    <option value="">Selecciona un usuario</option>
+                                    @foreach ($users as $user)
+                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-success">Generar</button>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
                             </div>
                         </form>
                     </div>
@@ -143,19 +193,25 @@
                                 ',', '');
 
                             let row = `<tr draggable="true" data-project-id="${project.id}">
-                        <td>${project.name}</td>
-                        <td>${project.user.name}</td>
-                        <td>${formattedDate}</td>`;
-                            @if (auth()->user()->is_admin)
-                                row += `<td width="10px"><a class="btn btn-primary" href="#">Editar</a></td>
-                                <td width="10px"><a class="btn btn-danger" href="#">Eliminar</a></td>`;
-                            @endif
-                            row += `</tr>`;
+                                <td>${project.name}</td>
+                                <td>${project.user.name}</td>
+                                <td>${formattedDate}</td>
+                                </tr>`;
+
                             $('#projects-list').append(row);
+                        });
+
+                        $('#projects-list tr').each(function() {
+                            $(this).on('dragstart', function(event) {
+                                const projectId = $(this).data('project-id');
+                                event.originalEvent.dataTransfer.setData('project-id',
+                                    projectId);
+                            });
                         });
                     }
                 });
             }
+
 
             loadProjects();
 
@@ -190,25 +246,26 @@
                 headerToolbar: {
                     left: 'prev,next,today',
                     center: 'title',
-                    right: 'dayGridMonth,dayGridWeek,timeGridDay'
+                    right: 'timeGridDay,dayGridMonth,dayGridWeek,'
                 },
-                views: {
-                    initialView: 'timeGridDay',
-                    slotDuration: '00:30:00',
-                },
+                initialView: 'timeGridDay',
+                slotDuration: '00:30:00',
                 allDaySlot: false,
                 editable: true,
                 droppable: true,
-                events: 'tasks',
+                events: '{{ route('tasks.index') }}',
 
                 drop: function(info) {
-                    const projectId = info.draggedEl.getAttribute('data-project-id');
+                    const projectId = info.draggedEl.dataset.projectId;
+                    console.log('Project ID:', projectId);
                     const startTime = info.dateStr;
                     $('#taskProjectId').val(projectId);
                     $('#taskStartTime').val(startTime);
-                    $('#taskModal').modal('show'); 
+                    $('#taskModal').modal('show');
 
-                    $('#taskForm').submit(function(e) {
+
+                    $('#taskForm').off('submit').on('submit', function(
+                        e) {
                         e.preventDefault();
                         const description = $('#taskDescription').val();
                         const endTime = $('#taskEndTime').val();
@@ -225,10 +282,9 @@
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    calendar
-                                .refetchEvents(); 
+                                    calendar.refetchEvents();
                                     alert('Tarea añadida exitosamente');
-                                    $('#taskModal').modal('hide'); 
+                                    $('#taskModal').modal('hide');
                                 }
                             },
                             error: function(xhr) {
@@ -237,15 +293,11 @@
                         });
                     });
                 }
+
             });
 
             calendar.render();
 
-            $('#projects-list tr').each(function() {
-                $(this).on('dragstart', function(event) {
-                    event.originalEvent.dataTransfer.setData('text', event.target.innerText);
-                });
-            });
         });
     </script>
 @endsection

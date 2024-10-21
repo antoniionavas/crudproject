@@ -24,6 +24,11 @@ Route::middleware([
 ])->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::resource('usuarios', UserController::class)->names('usuarios')->parameters(['usuarios' => 'user']);
-    Route::resource('proyectos', ProjectController::class)->names('proyectos')->parameters(['proyectos' => 'projects']);
-    Route::resource('tareas', TaskController::class)->names('tareas')->parameters(['tareas' => 'tasks']);
+
+    Route::get('/proyectos', [ProjectController::class, 'index'])->name('projects.index');
+    Route::get('/proyectos/list', [ProjectController::class, 'getProjects'])->name('projects.list');
+    Route::get('/proyectos/create', [ProjectController::class, 'createProjects'])->name('projects.create');
+    Route::get('/tasks', [ProjectController::class, 'load'])->name('tasks.index');
+    Route::post('/tasks/crear', [ProjectController::class, 'storeTask'])->name('tasks.store');
+
 });

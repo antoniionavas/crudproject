@@ -32,5 +32,4 @@ Route::middleware([
     Route::post('/tasks/create', [ProjectController::class, 'storeTask'])->name('tasks.store');
     Route::get('/proyectos/generate-pdf', [ProjectController::class, 'generatePdf'])->name('projects.generatePdf');
 
-
 });

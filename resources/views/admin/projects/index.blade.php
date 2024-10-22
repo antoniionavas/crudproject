@@ -24,7 +24,7 @@
                                 <i class="fas fa-file-pdf"></i>
                             </button>
                         </div>
-                    @endif
+                        @endif
 
                     <thead>
                         <tr>
@@ -66,7 +66,7 @@
             </div>
         </div>
 
-        <div class="card" style="width: 49%">
+        <div id='calendar-container' class="card" style="width: 49%">
             <div class="card-body">
                 <div id="calendar">
 
@@ -88,11 +88,10 @@
                         <form id="taskForm">
                             <div class="form-group">
                                 <label for="taskStartTime">Hora de Inicio</label>
-                                <input type="datetime-local" class="form-control" id="taskStartTime" name="start_time"
-                                    required>
+                                <p id="taskStartTime" class="form-control-static"></p>
                             </div>
 
-                            <input type="hidden" id="taskProjectId">
+                            <input type="hidden" id="taskProjectId" hidden>
                             <div class="form-group">
                                 <label for="taskDescription">Descripción</label>
                                 <input type="text" class="form-control" id="taskDescription" name="description" required>
@@ -100,7 +99,7 @@
 
                             <div class="form-group">
                                 <label for="taskEndTime">Hora de Fin</label>
-                                <input type="datetime-local" class="form-control" id="taskEndTime" name="end_time" required>
+                                <p id="taskEndTime" class="form-control-static"></p>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
@@ -125,8 +124,8 @@
                     <div class="modal-body">
                         <form action="{{ route('projects.generatePdf') }}" method="GET" target="_blank">
                             @csrf
-                            <div class="form-row"> 
-                                <div class="form-group col-md-6"> 
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
                                     <label for="start_date">Fecha Desde:</label>
                                     <input type="date" name="start_date" id="start_date" class="form-control">
                                 </div>
@@ -170,50 +169,164 @@
 
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 
-    <script>
-        $(document).ready(function() {
+    {{-- <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var Calendar = FullCalendar.Calendar;
+            var Draggable = FullCalendar.Draggable;
+
+            var containerEl = document.getElementById('projects-list');
+            var calendarEl = document.getElementById('calendar');
+
+            loadProjects();
+            loadTasks();
+
             function loadProjects() {
                 $.ajax({
-                    url: '{{ route('projects.list') }}',
-                    type: 'GET',
-                    success: function(response) {
-                        $('#projects-list').empty();
-                        $.each(response, function(index, project) {
-                            const date = new Date(project.updated_at);
+                    url: '/proyectos/list',
+                    method: 'GET',
+                    success: function(data) {
+                        containerEl.innerHTML = '';
 
-                            const options = {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false
-                            };
-                            const formattedDate = date.toLocaleString('es-ES', options).replace(
-                                ',', '');
+                        data.forEach(function(event) {
+                            var rowEl = document.createElement('tr');
 
-                            let row = `<tr draggable="true" data-project-id="${project.id}">
-                                <td>${project.name}</td>
-                                <td>${project.user.name}</td>
-                                <td>${formattedDate}</td>
-                                </tr>`;
+                            var nameTd = document.createElement('td');
+                            nameTd.innerText = event.name;
 
-                            $('#projects-list').append(row);
+                            var userTd = document.createElement('td');
+                            userTd.innerText = event.user;
+
+                            var dateTd = document.createElement('td');
+                            dateTd.innerText = event.date;
+
+                            rowEl.appendChild(nameTd);
+                            rowEl.appendChild(userTd);
+                            rowEl.appendChild(dateTd);
+
+                            rowEl.classList.add('fc-event');
+                            rowEl.setAttribute('data-event', JSON.stringify({
+                                id: event.id,
+                                title: event.name
+                            }));
+
+                            containerEl.appendChild(rowEl);
                         });
 
-                        $('#projects-list tr').each(function() {
-                            $(this).on('dragstart', function(event) {
-                                const projectId = $(this).data('project-id');
-                                event.originalEvent.dataTransfer.setData('project-id',
-                                    projectId);
-                            });
+                        new Draggable(containerEl, {
+                            itemSelector: '.fc-event',
+                            eventData: function(eventEl) {
+                                return JSON.parse(eventEl.getAttribute('data-event'));
+                            }
                         });
+                    },
+                    error: function(xhr) {
+                        console.error('Error al cargar proyectos:', xhr);
                     }
                 });
             }
 
+            function loadTasks() {
+                $.ajax({
+                    url: '/tasks',
+                    method: 'GET',
+                    success: function(data) {
+                        const events = data.map(task => ({
+                            title: task.title,
+                            start: task.start,
+                            end: task.end,
+                            id: task.id,
+                            description: task.description || "",
+                        }));
+                        calendar.addEventSource(events);
+                    },
+                    error: function(xhr) {
+                        console.error('Error al cargar tareas:', xhr);
+                    }
+                });
+            }
 
-            loadProjects();
+            var calendar = new Calendar(calendarEl, {
+                headerToolbar: {
+                    left: 'prev',
+                    center: 'title',
+                    right: 'next'
+                },
+                initialView: 'timeGridDay',
+                slotMinTime: '08:00:00',
+                slotMaxTime: '18:30:00',
+                slotDuration: '00:30:00',
+                slotLabelInterval: '00:30:00',
+                editable: true,
+                droppable: true,
+                allDaySlot: false,
+                slotLabelFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+
+                eventContent: function(arg) {
+                    const {
+                        event
+                    } = arg;
+                    return {
+                        html: `<div><strong>${event.title}</strong><div>${event.extendedProps.description || ''}</div></div>`
+                    };
+                },
+
+                drop: function(info) {
+                    const eventId = JSON.parse(info.draggedEl.getAttribute('data-event')).id;
+                    const title = JSON.parse(info.draggedEl.getAttribute('data-event')).title;
+                    const startTime = info.date;
+                    const endTime = new Date(info.date.getTime() + 30 * 60000);
+                    $('#taskStartTime').text(startTime.toLocaleString());
+                    $('#taskEndTime').text(endTime.toLocaleString());
+                    $('#taskProjectId').val(eventId);
+                    $('#taskModal').modal('show');
+
+                    currentDraggingEventId = eventId;
+
+
+                    $('#taskForm').off('submit').on('submit', function(e) {
+
+                        const description = $('#taskDescription').val();
+                        const data = {
+                            project_id: $('#taskProjectId').val(),
+                            start: startTime.toLocaleString('sv-SE', {
+                                timeZone: 'Europe/Madrid'
+                            }),
+                            end: endTime.toLocaleString('sv-SE', {
+                                timeZone: 'Europe/Madrid'
+                            }),
+                            description: description,
+                            _token: '{{ csrf_token() }}'
+                        };
+
+                        $.ajax({
+                            url: '{{ route('tasks.store') }}',
+                            type: 'POST',
+                            data: data,
+                            success: function(response) {
+                                $('#successMessage').text(response.message).show()
+                                    .delay(3000).fadeOut();
+                                $('#taskModal').modal('hide');
+
+                            },
+                            error: function(xhr) {
+                                alert('Error al crear la tarea.');
+                            }
+                        });
+
+                        $('#cancelTask').off('click').on('click', function() {
+                            tempEvent.remove();
+                            $('#taskModal').modal('hide');
+                        });
+                    });
+                }
+            });
+
+
+            calendar.render();
 
             $('#submitProject').click(function() {
                 const name = $('#name').val();
@@ -237,69 +350,185 @@
                 });
             });
         });
+    </script> --}}
 
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
+            var Calendar = FullCalendar.Calendar;
+            var Draggable = FullCalendar.Draggable;
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                locale: 'es',
+            var containerEl = document.getElementById('projects-list');
+            var calendarEl = document.getElementById('calendar');
+            var currentDraggingEventId;
+
+            loadProjects();
+            loadTasks();
+
+            function loadProjects() {
+                $.ajax({
+                    url: '/proyectos/list',
+                    method: 'GET',
+                    success: function(data) {
+                        containerEl.innerHTML = '';
+
+                        data.forEach(function(event) {
+                            var rowEl = document.createElement('tr');
+
+                            var nameTd = document.createElement('td');
+                            nameTd.innerText = event.name;
+
+                            var userTd = document.createElement('td');
+                            userTd.innerText = event.user;
+
+                            var dateTd = document.createElement('td');
+                            dateTd.innerText = event.date;
+
+                            rowEl.appendChild(nameTd);
+                            rowEl.appendChild(userTd);
+                            rowEl.appendChild(dateTd);
+
+                            rowEl.classList.add('fc-event');
+                            rowEl.setAttribute('data-event', JSON.stringify({
+                                id: event.id,
+                                title: event.name
+                            }));
+
+                            containerEl.appendChild(rowEl);
+                        });
+
+                        new Draggable(containerEl, {
+                            itemSelector: '.fc-event',
+                            eventData: function(eventEl) {
+                                return JSON.parse(eventEl.getAttribute('data-event'));
+                            }
+                        });
+                    },
+                    error: function(xhr) {
+                        console.error('Error al cargar proyectos:', xhr);
+                    }
+                });
+            }
+
+            function loadTasks() {
+                $.ajax({
+                    url: '/tasks',
+                    method: 'GET',
+                    success: function(data) {
+                        const events = data.map(task => ({
+                            title: task.title,
+                            start: task.start,
+                            end: task.end,
+                            id: task.id,
+                            description: task.description || "",
+                        }));
+                        calendar.addEventSource(events);
+                    },
+                    error: function(xhr) {
+                        console.error('Error al cargar tareas:', xhr);
+                    }
+                });
+            }
+
+            var calendar = new Calendar(calendarEl, {
+                locale:'es',
                 headerToolbar: {
-                    left: 'prev,next,today',
+                    left: 'prev',
                     center: 'title',
-                    right: 'timeGridDay,dayGridMonth,dayGridWeek,'
+                    right: 'next'
                 },
                 initialView: 'timeGridDay',
+                slotMinTime: '08:00:00',
+                slotMaxTime: '18:30:00',
                 slotDuration: '00:30:00',
-                allDaySlot: false,
+                slotLabelInterval: '00:30:00',
                 editable: true,
                 droppable: true,
-                events: '{{ route('tasks.index') }}',
+                allDaySlot: false,
+                slotLabelFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+
+                eventContent: function(arg) {
+                    const {
+                        event
+                    } = arg;
+                    return {
+                        html: `<div><strong>${event.title}</strong><div>${event.extendedProps.description || ''}</div></div>`
+                    };
+                },
 
                 drop: function(info) {
-                    const projectId = info.draggedEl.dataset.projectId;
-                    console.log('Project ID:', projectId);
-                    const startTime = info.dateStr;
-                    $('#taskProjectId').val(projectId);
-                    $('#taskStartTime').val(startTime);
+                    const eventId = JSON.parse(info.draggedEl.getAttribute('data-event')).id;
+                    const title = JSON.parse(info.draggedEl.getAttribute('data-event')).title;
+                    const startTime = info.date;
+                    const endTime = new Date(info.date.getTime() + 30 * 60000);
+                    $('#taskStartTime').text(startTime.toLocaleString());
+                    $('#taskEndTime').text(endTime.toLocaleString());
+                    $('#taskProjectId').val(eventId);
                     $('#taskModal').modal('show');
 
-
-                    $('#taskForm').off('submit').on('submit', function(
-                        e) {
+                    $('#taskForm').off('submit').on('submit', function(e) {
                         e.preventDefault();
                         const description = $('#taskDescription').val();
-                        const endTime = $('#taskEndTime').val();
+                        const data = {
+                            project_id: $('#taskProjectId').val(),
+                            start: startTime.toLocaleString('sv-SE', {
+                                timeZone: 'Europe/Madrid'
+                            }),
+                            end: endTime.toLocaleString('sv-SE', {
+                                timeZone: 'Europe/Madrid'
+                            }),
+                            description: description,
+                            _token: '{{ csrf_token() }}'
+                        };
 
                         $.ajax({
                             url: '{{ route('tasks.store') }}',
                             type: 'POST',
-                            data: {
-                                project_id: projectId,
-                                start_time: startTime,
-                                end_time: endTime,
-                                description: description,
-                                _token: '{{ csrf_token() }}'
-                            },
+                            data: data,
                             success: function(response) {
-                                if (response.success) {
-                                    calendar.refetchEvents();
-                                    alert('Tarea añadida exitosamente');
-                                    $('#taskModal').modal('hide');
-                                }
+                                $('#successMessage').text(response.message).show()
+                                    .delay(3000).fadeOut();
+                                $('#taskModal').modal('hide');
                             },
                             error: function(xhr) {
-                                alert('Error al añadir la tarea.');
+                                alert('Error al crear la tarea.');
                             }
                         });
                     });
                 }
-
             });
 
             calendar.render();
 
+            $('#submitProject').click(function() {
+                e.preventDefault();
+                const name = $('#name').val();
+                $.ajax({
+                    url: '{{ route('projects.create') }}',
+                    type: 'POST',
+                    data: {
+                        name: name,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        $('#successMessage').text(response.message).show().delay(3000)
+                            .fadeOut();
+                        $('#addProjectModal').modal('hide');
+                        $('#name').val('');
+                        loadProjects();
+                    },
+                    error: function(xhr) {
+                        alert('Error al crear el proyecto.');
+                    }
+                });
+            });
         });
     </script>
+
+
 @endsection
 
 @section('footer')

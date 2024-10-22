@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Project;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class ProjectController extends Controller
 {
@@ -21,7 +22,19 @@ class ProjectController extends Controller
     {
         $projects = Project::with('user')->orderBy('updated_at', 'desc')->get();
 
-        return response()->json($projects);
+
+        $events = [];
+        foreach ($projects as $project) {
+            $date =  Carbon::parse($project->updated_at)->format('d-m-Y');
+            $events[] = [
+                'id' => $project->id,
+                'name' => $project->name,
+                'user' => $project->user->name,
+                'date' => $date,
+            ];
+        }
+
+        return response()->json($events);
     }
 
     public function createProjects(Request $request)
@@ -33,7 +46,9 @@ class ProjectController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        return response()->log(['message' => 'El proyecto se creó con éxito']);
+        return response()->json([
+            'message' => 'El proyecto se creó con éxito'
+        ]);
     }
 
     public function load()
@@ -49,6 +64,7 @@ class ProjectController extends Controller
         $events = [];
         foreach ($tasks as $task) {
             $events[] = [
+                'id' => $task->id,
                 'title' => $task->project->name,
                 'start' => $task->start_time,
                 'end' => $task->end_time,
@@ -61,15 +77,21 @@ class ProjectController extends Controller
 
     public function storeTask(Request $request)
     {
-        Task::create([
-            'project_id' => $request->project_id,
-            'user_id' => auth()->id(),
-            'start' => $request->start_time,
-            'end' => $request->end_time,
-            'description' => $request->description
+        $request->validate([
+            'project_id' => 'required|integer',
+            'description' => 'required|string|max:255'
         ]);
 
-        return response()->json(['success' => true]);
+    
+        $tarea = Task::create([
+            'project_id' => $request->project_id,
+            'user_id' => auth()->id(),
+            'start_time' => Carbon::parse($request->start),
+            'end_time' => Carbon::parse($request->end),
+            'description' => $request->description
+        ]);
+    
+        return response()->json(['success' => true, 'message' => 'Tarea creada con éxito.', 'tarea' => $tarea]);
     }
 
 
@@ -98,7 +120,6 @@ class ProjectController extends Controller
         $tasks = $tasksQuery->get();
         $tasksByProject = $tasks->groupBy('project_id');
 
-        // Obtén el nombre del proyecto y del usuario (si se seleccionó)
         $projectName = $projectId ? Project::find($projectId)->name : 'Todos los proyectos';
         $userName = $userId ? User::find($userId)->name : 'Todos los usuarios';
 
